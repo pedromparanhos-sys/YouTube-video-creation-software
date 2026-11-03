@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -54,6 +55,27 @@ def manim_available() -> bool:
         return True
     except Exception:
         return False
+
+
+async def run(cmd: list[str], cwd: str | None = None, timeout: float | None = None) -> tuple[int, str]:
+    """Run a process off the event loop; returns (returncode, combined output).
+
+    asyncio.create_subprocess_exec is not supported by the SelectorEventLoop that
+    uvicorn --reload uses on Windows, so blocking subprocess.run runs in a thread.
+    """
+    # Manim prints Unicode through rich; without this the child crashes on cp1252 consoles.
+    # COLUMNS keeps rich from wrapping the log at 80 columns when there is no terminal.
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "COLUMNS": "160"}
+    proc = await asyncio.to_thread(
+        subprocess.run,
+        cmd,
+        cwd=cwd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout,
+    )
+    return proc.returncode, proc.stdout.decode("utf-8", "replace")
 
 
 def ffmpeg_path() -> str | None:
@@ -129,20 +151,12 @@ async def render_manim(req: ManimRequest):
                 "-o", f"{job}.mp4",
                 str(src), scene,
             ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                cwd=tmp,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-            )
             try:
-                out, _ = await asyncio.wait_for(proc.communicate(), timeout=600)
-            except asyncio.TimeoutError:
-                proc.kill()
+                code, log = await run(cmd, cwd=tmp, timeout=600)
+            except subprocess.TimeoutExpired:
                 raise HTTPException(504, "A renderização passou de 10 minutos e foi interrompida.")
-            log = out.decode("utf-8", "replace")
             found = list((tmpdir / "media").rglob(f"{job}.mp4"))
-            if proc.returncode != 0 or not found:
+            if code != 0 or not found:
                 raise HTTPException(422, {"message": "O Manim falhou ao renderizar a cena.", "log": tail(log)})
             dest = MEDIA / f"{job}.mp4"
             shutil.move(str(found[0]), dest)
@@ -168,18 +182,15 @@ async def export_mp4(file: UploadFile = File(...)):
     dest = MEDIA / f"{job}.mp4"
     with src.open("wb") as fh:
         shutil.copyfileobj(file.file, fh)
-    proc = await asyncio.create_subprocess_exec(
+    code, out = await run([
         ff, "-y", "-i", str(src),
         "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
         "-r", "30", "-movflags", "+faststart", "-an",
         str(dest),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-    out, _ = await proc.communicate()
+    ])
     src.unlink(missing_ok=True)
-    if proc.returncode != 0:
-        raise HTTPException(422, {"message": "O FFmpeg falhou ao converter o vídeo.", "log": tail(out.decode("utf-8", "replace"))})
+    if code != 0:
+        raise HTTPException(422, {"message": "O FFmpeg falhou ao converter o vídeo.", "log": tail(out)})
     return {"id": job, "url": f"/media/{job}.mp4"}
 
 

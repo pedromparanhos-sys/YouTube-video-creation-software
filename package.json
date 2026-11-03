@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "python3 -m uvicorn server.main:app --port 8765 --reload --reload-dir server",
-    "server:win": "python -m uvicorn server.main:app --port 8765 --reload --reload-dir server"
+    "server": "node scripts/server.mjs",
+    "server:win": "node scripts/server.mjs"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.3",

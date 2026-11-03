@@ -15,7 +15,9 @@ Abra http://localhost:5173.
 
 ## Rodar o serviço local (Manim + MP4)
 
-O editor funciona sozinho; o serviço Python é o que renderiza cenas **Manim** e converte a exportação para **MP4**. Precisa de Python 3.10+ e do [FFmpeg](https://ffmpeg.org/download.html) no PATH. O Manim tem um guia de instalação por sistema em https://docs.manim.community/en/stable/installation.html (no Linux, instale antes `libcairo2-dev` e `libpango1.0-dev`; `MathTex` exige LaTeX).
+O editor funciona sozinho; o serviço Python é o que renderiza cenas **Manim** e converte a exportação para **MP4**. Precisa de Python 3.10+ e do [FFmpeg](https://ffmpeg.org/download.html) no PATH. O Manim tem um guia de instalação por sistema em https://docs.manim.community/en/stable/installation.html (no Linux, instale antes `libcairo2-dev` e `libpango1.0-dev`; `MathTex` exige LaTeX, como o MiKTeX no Windows).
+
+No Windows, o FFmpeg se instala com `winget install Gyan.FFmpeg` (abra um terminal novo depois, para o PATH atualizar).
 
 Primeira vez, na pasta do projeto:
 
@@ -23,19 +25,19 @@ Primeira vez, na pasta do projeto:
 python -m venv .venv
 ```
 
-Ative o ambiente (Windows: `.venv\Scripts\activate` · macOS/Linux: `source .venv/bin/activate`) e instale:
+Instale as dependências com o Python do ambiente (Windows: `.venv\Scripts\python -m pip ...` · macOS/Linux: `.venv/bin/python -m pip ...`):
 
 ```bash
-pip install -r server/requirements.txt
+.venv/bin/python -m pip install -r server/requirements.txt
 ```
 
-Depois, com o ambiente ativado, em um segundo terminal:
+Depois, em um segundo terminal:
 
 ```bash
 npm run server
 ```
 
-No Windows, se `python3` não existir, use `npm run server:win`. O selo **Serviço local** no topo do editor fica verde quando ele está conectado (porta 8765).
+O script usa o Python do `.venv` sozinho (não precisa ativar o ambiente) e reinicia o serviço quando um arquivo de `server/` muda. Funciona igual no Windows, macOS e Linux; `npm run server:win` continua existindo como sinônimo. O selo **Serviço local** no topo do editor fica verde quando ele está conectado (porta 8765).
 
 ## O que já funciona (MVP)
 

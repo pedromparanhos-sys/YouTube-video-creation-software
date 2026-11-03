@@ -49,7 +49,7 @@ Um software de apresentação e de vídeo em que **toda cena é programável**:
 - Cenas Manim: editor Python, Renderizar (`Ctrl+Enter`), qualidade 480p/720p/1080p, ajuste automático de duração, log de erro e aviso de "código alterado".
 - Conversão para MP4 pelo FFmpeg.
 
-O fluxo inteiro foi testado de ponta a ponta no Linux (Playwright + Manim 0.19). **No Windows ainda não foi testado.**
+O fluxo inteiro foi testado de ponta a ponta no Linux (Playwright + Manim 0.19) e no **Windows 10** do Pedro (3/11/2026: Node 26, Python 3.13, Manim 0.19, FFmpeg 9 via winget, MiKTeX).
 
 ## Design (veja `DESIGN.md`)
 
@@ -68,16 +68,18 @@ Elementos:
 
 - GitHub: `pedromparanhos-sys/youtube-video-creation-software`.
 - O `main` tem o MVP (PR #1, já mesclado).
-- O branch **`feat/python-service`** tem o serviço Manim/MP4. Confirme se já foi mesclado no `main`; se não, ajude o Pedro a abrir o PR e fazer o merge.
+- O serviço Manim/MP4 (`feat/python-service`, PR #2) já foi mesclado no `main`.
 - Sempre faça commit e push do trabalho para não perder nada. Trabalhe em branches e faça PR para o `main`.
 
-## Primeira coisa a fazer nesta nova sessão (no Windows)
+## Windows: como rodar e o que foi corrigido
 
-1. Conferir Node 22, Python 3.10+ e FFmpeg no PATH.
-2. Criar o `.venv` e rodar `pip install -r server/requirements.txt`. Se o Manim der problema no Windows, siga https://docs.manim.community/en/stable/installation.html.
-3. Rodar `npm install`, depois `npm run dev`, depois `npm run server:win` em outro terminal.
-4. Validar no navegador: o selo "Serviço local" fica verde, a cena "Círculo unitário (Manim)" renderiza e a exportação gera MP4.
-5. Corrigir o que quebrar no Windows. Os scripts `server` e `server:win` estão no `package.json`.
+- FFmpeg: `winget install Gyan.FFmpeg` (abrir terminal novo depois).
+- `python -m venv .venv` e `.venv\Scripts\python -m pip install -r server/requirements.txt`.
+- `npm run dev` e, em outro terminal, `npm run server` (é o mesmo que `server:win`). O script `scripts/server.mjs` usa o Python do `.venv` sem precisar ativar e faz o próprio reload ao mudar `server/*.py`.
+- Correções feitas:
+  - `asyncio.create_subprocess_exec` dava `NotImplementedError` no Windows (o uvicorn usa SelectorEventLoop). Agora os subprocessos rodam com `subprocess.run` numa thread (`run()` em `server/main.py`).
+  - O `uvicorn --reload` no Windows reinicia com `CTRL_C_EVENT`, que derruba todo o console (npm junto). O reload agora é feito pelo `scripts/server.mjs`.
+  - O subprocesso do Manim recebe `PYTHONIOENCODING=utf-8` e `COLUMNS=160` (o console do Windows é cp1252 e o rich quebrava o log em 80 colunas).
 
 ## Próximos passos (em ordem sugerida)
 
