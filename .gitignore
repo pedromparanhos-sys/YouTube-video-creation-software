@@ -3,3 +3,6 @@ dist
 .impeccable/review
 .impeccable/config.local.json
 *.local
+frame-mvp.zip
+canvas.png
+editor.png
