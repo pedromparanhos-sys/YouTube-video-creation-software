@@ -1,0 +1,32 @@
+{
+  "colors": {
+    "ground": "#0c0d10",
+    "surface": "#111216",
+    "surface2": "#16181d",
+    "surface3": "#1c1f25",
+    "line": "#22252c",
+    "lineStrong": "#2e323a",
+    "ink": "#e6e8ec",
+    "ink2": "#a3a8b3",
+    "ink3": "#737985",
+    "violet": "#8b7cf6",
+    "blue": "#5ea3ff",
+    "mint": "#7ee2b8",
+    "red": "#ff6b6b"
+  },
+  "fonts": {
+    "ui": "Inter Variable",
+    "mono": "JetBrains Mono Variable"
+  },
+  "radius": {
+    "sm": 4,
+    "md": 6,
+    "lg": 10
+  },
+  "layout": {
+    "topbar": 44,
+    "sidebar": 240,
+    "inspector": 400,
+    "timeline": 184
+  }
+}
