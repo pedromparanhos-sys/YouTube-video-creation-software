@@ -2,7 +2,9 @@
 
 Editor de vídeos para o YouTube em que cada cena é programável. Você monta as cenas num **canvas infinito**, marca retângulos dele como **frames do vídeo**, anima cada frame com código em função do tempo `t`, e exporta.
 
-## Rodar
+## Rodar o editor
+
+Precisa do [Node.js 22](https://nodejs.org).
 
 ```bash
 npm install
@@ -10,6 +12,30 @@ npm run dev
 ```
 
 Abra http://localhost:5173.
+
+## Rodar o serviço local (Manim + MP4)
+
+O editor funciona sozinho; o serviço Python é o que renderiza cenas **Manim** e converte a exportação para **MP4**. Precisa de Python 3.10+ e do [FFmpeg](https://ffmpeg.org/download.html) no PATH. O Manim tem um guia de instalação por sistema em https://docs.manim.community/en/stable/installation.html (no Linux, instale antes `libcairo2-dev` e `libpango1.0-dev`; `MathTex` exige LaTeX).
+
+Primeira vez, na pasta do projeto:
+
+```bash
+python -m venv .venv
+```
+
+Ative o ambiente (Windows: `.venv\Scripts\activate` · macOS/Linux: `source .venv/bin/activate`) e instale:
+
+```bash
+pip install -r server/requirements.txt
+```
+
+Depois, com o ambiente ativado, em um segundo terminal:
+
+```bash
+npm run server
+```
+
+No Windows, se `python3` não existir, use `npm run server:win`. O selo **Serviço local** no topo do editor fica verde quando ele está conectado (porta 8765).
 
 ## O que já funciona (MVP)
 
@@ -20,7 +46,8 @@ Abra http://localhost:5173.
 - Linha do tempo: clipes na ordem do vídeo, playhead arrastável, duração ajustável pela borda do clipe.
 - Na reprodução (`Espaço`), a câmera voa pela rota de um frame ao próximo.
 - Modo apresentação (`P`) em tela cheia.
-- Exportar em WebM 1920×1080 a 30fps (no navegador, em tempo real).
+- Exportar em WebM 1920×1080 a 30fps (no navegador, em tempo real) e converter para MP4 (H.264) pelo serviço local.
+- Cenas **Manim (Python)**: escreva a `Scene`, clique em Renderizar (`Ctrl+Enter`), e o vídeo entra no frame, sincronizado com a linha do tempo. A duração do clipe se ajusta ao vídeo.
 
 ## API das cenas (`lib`)
 
@@ -28,8 +55,7 @@ Abra http://localhost:5173.
 
 ## Próximos passos
 
-1. Serviço Python local (FastAPI) para cenas **Manim** e exportação MP4 via **FFmpeg**.
-2. Gravação de voz e webcam por cena; legendas com Whisper.
-3. Cenas **voxel 3D** (Three.js) com física.
-4. Ponte com o **Blender** (`blender -b` + `bpy`).
-5. Empacotar como app desktop com Tauri.
+1. Gravação de voz e webcam por cena; legendas com Whisper.
+2. Cenas **voxel 3D** (Three.js) com física.
+3. Ponte com o **Blender** (`blender -b` + `bpy`).
+4. Empacotar como app desktop com Tauri.

@@ -87,3 +87,33 @@ const { text, colors, span } = lib;
 ctx.globalAlpha = span(t, 0, 0.6);
 text(ctx, 'Nova cena', w / 2, h / 2, { size: 96, weight: 600, align: 'center' });
 `;
+
+export const SAMPLE_MANIM = `from manim import *
+
+# Cena Manim: renderizada pelo serviço local (python -m uvicorn server.main:app --port 8765).
+# Use Text/DecimalNumber à vontade; MathTex precisa de LaTeX instalado.
+
+class CirculoUnitario(Scene):
+    def construct(self):
+        self.camera.background_color = "#0a0b0d"
+        plane = NumberPlane(
+            x_range=[-3, 3], y_range=[-2, 2],
+            background_line_style={"stroke_color": "#1c1f26", "stroke_width": 2},
+            axis_config={"color": "#7d838f"},
+        ).scale(1.6)
+        circle = Circle(radius=1.6, color="#8b7cf6", stroke_width=6)
+        theta = ValueTracker(0)
+
+        dot = always_redraw(lambda: Dot(
+            circle.point_at_angle(theta.get_value()), color="#7ee2b8", radius=0.11))
+        radius = always_redraw(lambda: Line(
+            ORIGIN, dot.get_center(), color="#5ea3ff", stroke_width=5))
+        label = always_redraw(lambda: Text(
+            f"θ = {theta.get_value():.2f}", font_size=34, color="#eceef2"
+        ).to_corner(UL))
+
+        self.play(Create(plane), run_time=1.2)
+        self.play(Create(circle), FadeIn(dot), Create(radius), FadeIn(label))
+        self.play(theta.animate.set_value(PI), run_time=3, rate_func=smooth)
+        self.wait(0.5)
+`;

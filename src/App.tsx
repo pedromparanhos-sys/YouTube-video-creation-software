@@ -8,6 +8,7 @@ import { Inspector } from './ui/Inspector';
 import { Timeline } from './ui/Timeline';
 import { formatTime, totalDuration, useStore } from './store';
 import { exportVideo, renderVideoFrame } from './scene/render';
+import { convertToMp4, useServerHealth } from './service/api';
 
 function usePlaybackClock() {
   const playing = useStore((s) => s.playing);
@@ -88,7 +89,7 @@ function Present() {
     const loop = () => {
       const st = useStore.getState();
       const c = ref.current;
-      if (c) renderVideoFrame(c.getContext('2d')!, st.frames, st.time, c.width, c.height);
+      if (c) renderVideoFrame(c.getContext('2d')!, st.frames, st.time, c.width, c.height, st.playing);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -123,6 +124,10 @@ function ExportDialog({ onClose }: { onClose: () => void }) {
   const [state, setState] = useState<'running' | 'done' | 'error'>('running');
   const [message, setMessage] = useState('');
   const [url, setUrl] = useState<string | null>(null);
+  const [blob, setBlob] = useState<Blob | null>(null);
+  const [mp4, setMp4] = useState<{ state: 'idle' | 'working' | 'done' | 'error'; url?: string; error?: string }>({ state: 'idle' });
+  const server = useStore((s) => s.server);
+  const canMp4 = server.status === 'online' && server.ffmpeg;
   const cancel = useRef<() => void>(() => {});
   useEffect(() => {
     cancel.current = exportVideo(useStore.getState().frames, setProgress, (blob, error) => {
@@ -130,6 +135,7 @@ function ExportDialog({ onClose }: { onClose: () => void }) {
         setState('error');
         setMessage(error);
       } else if (blob) {
+        setBlob(blob);
         setUrl(URL.createObjectURL(blob));
         setState('done');
       }
@@ -148,13 +154,46 @@ function ExportDialog({ onClose }: { onClose: () => void }) {
             <p className="num" style={{ fontSize: 12 }}>{Math.round(progress * 100)}%</p>
           </>
         )}
-        {state === 'done' && <p>Arquivo WebM gerado. A conversão para MP4 chega junto com o serviço local de FFmpeg.</p>}
+        {state === 'done' && (
+          <p>
+            {mp4.state === 'done'
+              ? 'MP4 (H.264) pronto para o YouTube.'
+              : mp4.state === 'working'
+                ? 'Convertendo para MP4 com o FFmpeg…'
+                : mp4.state === 'error'
+                  ? `Falha na conversão: ${mp4.error}`
+                  : canMp4
+                    ? 'WebM gerado. Converta para MP4 (H.264), o formato recomendado pelo YouTube.'
+                    : 'WebM gerado. Para converter em MP4, ligue o serviço local (npm run server).'}
+          </p>
+        )}
         {state === 'error' && <p>{message}</p>}
         <div className="actions">
           <button className="btn ghost" onClick={onClose}>{state === 'running' ? 'Cancelar' : 'Fechar'}</button>
           {url && (
-            <a className="btn primary" href={url} download="video.webm" style={{ textDecoration: 'none' }}>
+            <a className={`btn ${canMp4 ? '' : 'primary'}`} href={url} download="video.webm" style={{ textDecoration: 'none' }}>
               Baixar .webm
+            </a>
+          )}
+          {blob && canMp4 && mp4.state !== 'done' && (
+            <button
+              className="btn primary"
+              disabled={mp4.state === 'working'}
+              onClick={async () => {
+                setMp4({ state: 'working' });
+                try {
+                  setMp4({ state: 'done', url: await convertToMp4(blob) });
+                } catch (e) {
+                  setMp4({ state: 'error', error: (e as Error).message });
+                }
+              }}
+            >
+              {mp4.state === 'working' ? 'Convertendo…' : 'Converter para MP4'}
+            </button>
+          )}
+          {mp4.url && (
+            <a className="btn primary" href={mp4.url} download="video.mp4" style={{ textDecoration: 'none' }}>
+              Baixar .mp4
             </a>
           )}
         </div>
@@ -166,6 +205,7 @@ function ExportDialog({ onClose }: { onClose: () => void }) {
 export default function App() {
   usePlaybackClock();
   useShortcuts();
+  useServerHealth();
   const presenting = useStore((s) => s.presenting);
   const [exporting, setExporting] = useState(false);
   const tool = useStore((s) => s.tool);

@@ -51,8 +51,16 @@ export function Sidebar() {
               >
                 <Code2 size={15} strokeWidth={1.75} /> Cena em código (JS) <span />
               </button>
-              <button role="menuitem" disabled>
-                <Sigma size={15} strokeWidth={1.75} /> Cena Manim (Python) <span className="soon">em breve</span>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  const id = addFrame({ kind: 'manim', name: `Manim ${useStore.getState().frames.length + 1}` });
+                  setMenu(false);
+                  const f = useStore.getState().frames.find((x) => x.id === id);
+                  if (f) flyTo(fitFrame(f));
+                }}
+              >
+                <Sigma size={15} strokeWidth={1.75} /> Cena Manim (Python) <span />
               </button>
               <button role="menuitem" disabled>
                 <Box size={15} strokeWidth={1.75} /> Voxel 3D e física <span className="soon">em breve</span>

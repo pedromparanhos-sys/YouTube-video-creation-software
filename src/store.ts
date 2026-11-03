@@ -1,8 +1,22 @@
 import { create } from 'zustand';
-import { SAMPLE_BLANK, SAMPLE_PHYSICS, SAMPLE_PLOT, SAMPLE_TITLE, SAMPLE_VOXEL } from './scene/samples';
+import { SAMPLE_BLANK, SAMPLE_MANIM, SAMPLE_PHYSICS, SAMPLE_PLOT, SAMPLE_TITLE, SAMPLE_VOXEL } from './scene/samples';
+
+export type FrameKind = 'js' | 'manim';
+
+/** Result of the last Manim render for a frame. */
+export type RenderInfo = {
+  status: 'idle' | 'rendering' | 'done' | 'error';
+  url?: string; // absolute URL served by the local service
+  duration?: number;
+  error?: string;
+  log?: string;
+  code?: string; // python source that produced `url`
+};
 
 export type Frame = {
   id: string;
+  kind: FrameKind;
+  render?: RenderInfo;
   name: string;
   x: number;
   y: number;
@@ -11,6 +25,11 @@ export type Frame = {
   duration: number;
   code: string;
 };
+
+export type ServerStatus =
+  | { status: 'checking' }
+  | { status: 'offline' }
+  | { status: 'online'; manim: string | null; ffmpeg: boolean };
 
 export type Tool = 'select' | 'hand' | 'frame';
 export type Camera = { x: number; y: number; zoom: number }; // world point at screen origin, px per world unit
@@ -24,6 +43,8 @@ type State = {
   playing: boolean;
   presenting: boolean;
   exporting: number | null; // 0..1 progress
+  server: ServerStatus;
+  setServer: (s: ServerStatus) => void;
   setTool: (t: Tool) => void;
   setCamera: (c: Camera) => void;
   select: (id: string | null) => void;
@@ -44,10 +65,11 @@ const FW = 1920;
 const FH = 1080;
 
 const initialFrames: Frame[] = [
-  { id: uid(), name: 'Abertura', x: 0, y: 0, w: FW, h: FH, duration: 4, code: SAMPLE_TITLE },
-  { id: uid(), name: 'Seno e cosseno', x: 2400, y: 300, w: FW, h: FH, duration: 6, code: SAMPLE_PLOT },
-  { id: uid(), name: 'Onda de pêndulos', x: 4700, y: -200, w: FW, h: FH, duration: 8, code: SAMPLE_PHYSICS },
-  { id: uid(), name: 'Terreno em voxels', x: 2600, y: 1900, w: FW, h: FH, duration: 6, code: SAMPLE_VOXEL },
+  { id: uid(), kind: 'js', name: 'Abertura', x: 0, y: 0, w: FW, h: FH, duration: 4, code: SAMPLE_TITLE },
+  { id: uid(), kind: 'js', name: 'Seno e cosseno', x: 2400, y: 300, w: FW, h: FH, duration: 6, code: SAMPLE_PLOT },
+  { id: uid(), kind: 'js', name: 'Onda de pêndulos', x: 4700, y: -200, w: FW, h: FH, duration: 8, code: SAMPLE_PHYSICS },
+  { id: uid(), kind: 'js', name: 'Terreno em voxels', x: 2600, y: 1900, w: FW, h: FH, duration: 6, code: SAMPLE_VOXEL },
+  { id: uid(), kind: 'manim', name: 'Círculo unitário (Manim)', x: 5000, y: 1700, w: FW, h: FH, duration: 6, code: SAMPLE_MANIM },
 ];
 
 const STORAGE_KEY = 'frame-editor/v1';
@@ -57,7 +79,13 @@ function load(): Frame[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Frame[];
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed) && parsed.length)
+        // older saves have no kind; a render left mid-flight cannot resume after reload
+        return parsed.map((f) => ({
+          ...f,
+          kind: f.kind ?? 'js',
+          render: f.render?.status === 'rendering' ? { ...f.render, status: 'idle' } : f.render,
+        }));
     }
   } catch {
     /* storage unavailable */
@@ -74,6 +102,8 @@ export const useStore = create<State>((set, get) => ({
   playing: false,
   presenting: false,
   exporting: null,
+  server: { status: 'checking' },
+  setServer: (server) => set({ server }),
   setTool: (tool) => set({ tool }),
   setCamera: (camera) => set({ camera }),
   select: (selectedId) => set({ selectedId }),
@@ -91,8 +121,9 @@ export const useStore = create<State>((set, get) => ({
       w: FW,
       h: FH,
       duration: 4,
-      code: SAMPLE_BLANK,
+      kind: 'js',
       ...f,
+      code: f.code ?? (f.kind === 'manim' ? SAMPLE_MANIM : SAMPLE_BLANK),
     };
     set({ frames: [...frames, frame], selectedId: id });
     return id;
