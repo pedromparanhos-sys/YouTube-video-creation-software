@@ -19,6 +19,7 @@ A technical creator editing for hours at a desk, often in a dim room, judging vi
 | `--blue` | `#5ea3ff` | playhead, active-in-playback, travelled route |
 | `--mint` | `#7ee2b8` | live/render state (export progress, "running") |
 | `--red` | `#ff6b6b` | errors, (future) recording |
+| `--amber` | `#f5c26b` | stale render, waiting states |
 
 Scene palette (`lib.colors`) reuses the same violet/blue/mint/amber on `#0a0b0d`, so video content and editor share one world.
 

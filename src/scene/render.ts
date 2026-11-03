@@ -1,8 +1,15 @@
 import { locate, totalDuration, type Frame } from '../store';
-import { drawScene } from './runtime';
+import { drawFrameContent } from './frameContent';
 
 /** Renders the video at `time` into a W×H canvas, letterboxing frames of other aspect ratios. */
-export function renderVideoFrame(ctx: CanvasRenderingContext2D, frames: Frame[], time: number, W: number, H: number) {
+export function renderVideoFrame(
+  ctx: CanvasRenderingContext2D,
+  frames: Frame[],
+  time: number,
+  W: number,
+  H: number,
+  running = false,
+) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
@@ -12,7 +19,7 @@ export function renderVideoFrame(ctx: CanvasRenderingContext2D, frames: Frame[],
   const k = Math.min(W / f.w, H / f.h);
   const w = f.w * k;
   const h = f.h * k;
-  drawScene(ctx, f.id, f.code, loc.local, (W - w) / 2, (H - h) / 2, w, h);
+  drawFrameContent(ctx, f, loc.local, (W - w) / 2, (H - h) / 2, w, h, running, 'output');
 }
 
 function pickMime() {
@@ -51,7 +58,7 @@ export function exportVideo(
   let raf = 0;
   const tick = (now: number) => {
     const t = (now - start) / 1000;
-    renderVideoFrame(ctx, frames, Math.min(t, total), W, H);
+    renderVideoFrame(ctx, frames, Math.min(t, total), W, H, true);
     onProgress(Math.min(1, t / total));
     if (t >= total || cancelled) {
       rec.stop();

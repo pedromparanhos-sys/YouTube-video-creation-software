@@ -6,3 +6,6 @@ dist
 frame-mvp.zip
 canvas.png
 editor.png
+.venv
+__pycache__
+server/media

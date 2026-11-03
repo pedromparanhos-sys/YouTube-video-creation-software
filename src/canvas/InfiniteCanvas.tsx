@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { locate, useStore, type Frame } from '../store';
-import { drawScene } from '../scene/runtime';
+import { drawFrameContent } from '../scene/frameContent';
 import { fitAll, fitFrame, interp, viewport } from './camera';
 
 const C = {
@@ -93,7 +93,7 @@ export function InfiniteCanvas() {
         if (x > viewport.w || y > viewport.h || x + w < 0 || y + h < 0) return;
         const isActive = loc?.index === i;
         const t = isActive ? loc!.local : f.duration;
-        drawScene(ctx, f.id, f.code, t, x, y, w, h);
+        drawFrameContent(ctx, f, t, x, y, w, h, isActive && s.playing);
         const selected = s.selectedId === f.id;
         ctx.lineWidth = selected ? 2 : 1;
         ctx.strokeStyle = selected ? C.violet : isActive && s.playing ? C.blue : C.border;

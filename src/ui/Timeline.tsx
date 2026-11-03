@@ -103,7 +103,7 @@ export function Timeline() {
                 >
                   <span className="cn">{f.name}</span>
                   <span className="cd">{f.duration.toFixed(1)}s</span>
-                  <span className="kind">JS</span>
+                  <span className="kind">{f.kind === 'manim' ? 'MANIM' : 'JS'}</span>
                   <span
                     className={`grip ${resizing === f.id ? 'on' : ''}`}
                     title="Arraste para mudar a duração"

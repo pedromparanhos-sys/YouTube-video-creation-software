@@ -7,10 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "python3 -m uvicorn server.main:app --port 8765 --reload --reload-dir server",
+    "server:win": "python -m uvicorn server.main:app --port 8765 --reload --reload-dir server"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
+    "@codemirror/lang-python": "^6.1.7",
     "@codemirror/language": "^6.10.8",
     "@codemirror/view": "^6.36.2",
     "@fontsource-variable/inter": "^5.2.5",

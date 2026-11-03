@@ -1,41 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
-import { EditorView } from '@codemirror/view';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { tags } from '@lezer/highlight';
 import { AlertTriangle, Copy, Trash2 } from 'lucide-react';
 import { totalDuration, useStore, formatTime } from '../store';
 import { getRuntimeError } from '../scene/runtime';
+import { ManimPanel } from './ManimPanel';
+import { editorTheme } from './editorTheme';
 
-const theme = EditorView.theme(
-  {
-    '&': { backgroundColor: 'var(--ground)', color: '#d6d9df', fontSize: '12.5px', height: '100%' },
-    '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.6' },
-    '.cm-content': { caretColor: '#b4a9ff', padding: '10px 0' },
-    '.cm-cursor': { borderLeftColor: '#b4a9ff', borderLeftWidth: '2px' },
-    '.cm-gutters': { backgroundColor: 'var(--ground)', color: '#4a4f5a', border: 'none', paddingLeft: '6px' },
-    '.cm-activeLine': { backgroundColor: 'rgba(139,124,246,0.06)' },
-    '.cm-activeLineGutter': { backgroundColor: 'transparent', color: '#a3a8b3' },
-    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': { backgroundColor: 'rgba(139,124,246,0.28) !important' },
-    '.cm-matchingBracket': { backgroundColor: 'rgba(94,163,255,0.18)', outline: 'none' },
-    '&.cm-focused': { outline: 'none' },
-  },
-  { dark: true },
-);
-
-const highlight = HighlightStyle.define([
-  { tag: tags.comment, color: '#5d6370', fontStyle: 'italic' },
-  { tag: [tags.keyword, tags.operatorKeyword, tags.controlKeyword, tags.definitionKeyword], color: '#b4a9ff' },
-  { tag: [tags.string, tags.special(tags.string)], color: '#7ee2b8' },
-  { tag: [tags.number, tags.bool, tags.null], color: '#f5c26b' },
-  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: '#8cc0ff' },
-  { tag: tags.propertyName, color: '#d6d9df' },
-  { tag: tags.variableName, color: '#e6e8ec' },
-  { tag: [tags.operator, tags.punctuation], color: '#8a909c' },
-]);
-
-const extensions = [javascript(), theme, syntaxHighlighting(highlight)];
+const extensions = [javascript(), ...editorTheme];
 
 const ASPECTS: { label: string; r: number }[] = [
   { label: '16:9', r: 9 / 16 },
@@ -140,22 +112,28 @@ export function Inspector() {
           </div>
         </div>
       </div>
-      <div className="code-head">
-        Código da cena
-        <span className="lang">(ctx, t, w, h, lib) =&gt; void</span>
-      </div>
-      <div className="code">
-        <CodeMirror value={frame.code} onChange={onCode} extensions={extensions} theme="none" basicSetup={{ foldGutter: false, highlightActiveLine: true }} height="100%" />
-      </div>
-      {err ? (
-        <div className="err" role="alert">
-          <AlertTriangle size={14} style={{ flex: 'none', marginTop: 2 }} />
-          {err}
-        </div>
+      {frame.kind === 'manim' ? (
+        <ManimPanel frame={frame} onCode={onCode} />
       ) : (
-        <div className="ok">
-          <span className="dot" /> Rodando ao vivo no canvas
+        <>
+        <div className="code-head">
+          Código da cena
+          <span className="lang">(ctx, t, w, h, lib) =&gt; void</span>
         </div>
+        <div className="code">
+          <CodeMirror value={frame.code} onChange={onCode} extensions={extensions} theme="none" basicSetup={{ foldGutter: false, highlightActiveLine: true }} height="100%" />
+        </div>
+        {err ? (
+          <div className="err" role="alert">
+            <AlertTriangle size={14} style={{ flex: 'none', marginTop: 2 }} />
+            {err}
+          </div>
+        ) : (
+          <div className="ok">
+            <span className="dot" /> Rodando ao vivo no canvas
+          </div>
+        )}
+        </>
       )}
     </aside>
   );

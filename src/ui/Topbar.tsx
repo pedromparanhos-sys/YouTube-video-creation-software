@@ -40,6 +40,7 @@ export function Topbar({ onExport }: { onExport: () => void }) {
       </button>
       <span className="zoom num">{Math.round(zoom * 100)}%</span>
       <div className="spacer" />
+      <ServicePill />
       <button className="btn ghost" onClick={() => setPresenting(true)} title="Apresentar  P">
         <MonitorPlay size={15} strokeWidth={1.75} /> Apresentar
       </button>
@@ -47,5 +48,18 @@ export function Topbar({ onExport }: { onExport: () => void }) {
         <Download size={15} strokeWidth={2} /> Exportar vídeo
       </button>
     </header>
+  );
+}
+
+function ServicePill() {
+  const server = useStore((s) => s.server);
+  const on = server.status === 'online';
+  const title = on
+    ? `Serviço local conectado · Manim ${server.manim ?? 'não instalado'} · FFmpeg ${server.ffmpeg ? 'ok' : 'ausente'}`
+    : 'Serviço local desligado. Rode "npm run server" na pasta do projeto para usar Manim e exportar MP4.';
+  return (
+    <span className="svc" data-on={on} title={title} role="status">
+      <span className="dot" /> {server.status === 'checking' ? 'Serviço…' : on ? 'Serviço local' : 'Serviço offline'}
+    </span>
   );
 }
